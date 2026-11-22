@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-split">
+        <div class="auth-showcase">
+            <div class="blob-3"></div>
+            <div class="blob-4"></div>
+            <div class="showcase-content">
+                <div class="showcase-logo">🎒</div>
+                <h1 class="showcase-title">
+                    Lost Something?
+                    <span>We'll Help You Find It.</span>
+                </h1>
+                <p class="showcase-subtitle">
+                    FoundIt connects students with their lost belongings through smart AI matching and real-time chat. Never lose hope again.
+                </p>
+                <div class="showcase-features">
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">🤖</div>
+                        <div class="showcase-feature-text">AI-Powered Smart Matching</div>
+                    </div>
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">⚡</div>
+                        <div class="showcase-feature-text">Real-Time Chat & Notifications</div>
+                    </div>
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">🔒</div>
+                        <div class="showcase-feature-text">Verified College Students Only</div>
+                    </div>
+                </div>
+                <div class="showcase-stats">
+                    <div class="showcase-stat"><h3>24/7</h3><p>Always Active</p></div>
+                    <div class="showcase-stat"><h3>100%</h3><p>Free Forever</p></div>
+                    <div class="showcase-stat"><h3>AI</h3><p>Smart Match</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-form-side">
+            <div class="auth-form-box">
+                <div class="mobile-logo">🎒</div>
+                <h1>Welcome back 👋</h1>
+                <p class="form-subtitle">Sign in to continue to FoundIt</p>
+
+                <form id="loginForm">
+                    <div class="form-field">
+                        <input type="email" id="email" placeholder=" " required autocomplete="email">
+                        <label>Email Address</label>
+                    </div>
+                    <div class="form-field">
+                        <input type="password" id="password" placeholder=" " required autocomplete="current-password">
+                        <label>Password</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="loginBtn">Sign In →</button>
+                </form>
+
+                <p class="auth-footer" style="margin-top: 8px;">
+                    <a href="forgot-password.html" style="color: #64748b; font-weight: 600;">Forgot password?</a>
+                </p>
+
+                <p class="auth-footer">
+                    New to FoundIt? <a href="register.html">Create an account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (getToken()) window.location.href = 'dashboard.html';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            const emailValue = document.getElementById('email').value;
+
+            try {
+                const data = await apiRequest('/auth/login', 'POST', {
+                    email: emailValue,
+                    password: document.getElementById('password').value
+                });
+
+                // ============ ADMIN BLOCK ON PUBLIC LOGIN ============
+                if (data.user.role === 'admin') {
+                    showToast('❌ Admins must use admin login page!', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In →';
+                    setTimeout(() => {
+                        window.location.href = 'admin-login.html';
+                    }, 2000);
+                    return;
+                }
+
+                saveAuth(data.token, data.user);
+                showToast('Welcome back, ' + data.user.name + '! 🎉', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 800);
+            } catch (error) {
+                if (error.message.toLowerCase().includes('verify')) {
+                    showToast('Email not verified. Sending OTP...', 'error');
+                    try {
+                        await apiRequest('/auth/resend-otp', 'POST', { email: emailValue });
+                        localStorage.setItem('pendingVerifyEmail', emailValue);
+                        setTimeout(() => window.location.href = 'register.html?verify=' + encodeURIComponent(emailValue), 1500);
+                    } catch {
+                        setTimeout(() => window.location.href = 'register.html', 1500);
+                    }
+                } else {
+                    showToast(error.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In →';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

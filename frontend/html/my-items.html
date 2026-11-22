@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - My Items</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title">📁 My Items</h2>
+                <a href="post-item.html" class="dash-section-link">+ Report New Item</a>
+            </div>
+
+            <div id="itemsContainer">
+                <div class="dash-items-grid">
+                    <div class="dash-skeleton"></div>
+                    <div class="dash-skeleton"></div>
+                    <div class="dash-skeleton"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'my-items') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        function getCategoryIcon(c) {
+            const icons = { 'Electronics':'📱','Wallet':'👛','ID Card':'🪪','Books':'📚','Clothing':'👕','Accessories':'🕶️','Other':'📦' };
+            return icons[c] || '📦';
+        }
+
+        function timeAgo(date) {
+            const s = Math.floor((Date.now() - new Date(date)) / 1000);
+            if (s < 60) return 'just now';
+            if (s < 3600) return Math.floor(s / 60) + ' min ago';
+            if (s < 86400) return Math.floor(s / 3600) + ' hours ago';
+            if (s < 604800) return Math.floor(s / 86400) + ' days ago';
+            return new Date(date).toLocaleDateString();
+        }
+
+        async function loadMyItems() {
+            try {
+                const data = await apiRequest('/items/my');
+                const items = data.items;
+                const container = document.getElementById('itemsContainer');
+
+                if (items.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px; background: white; border-radius: 20px; border: 2px dashed #e2e8f0;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px;">No items yet</h3>
+                            <p style="color: #64748b; margin-bottom: 20px;">You haven't reported any items yet.</p>
+                            <a href="post-item.html" style="display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 12px; font-weight: 700;">+ Report First Item</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="dash-items-grid">
+                        ${items.map(item => `
+                            <div class="dash-item-card">
+                                <div class="dash-item-image" onclick="viewItem('${item._id}')">
+                                    ${item.imageUrl ? `<img src="${safeUrl(item.imageUrl)}" alt="">` : `<span style="font-size: 60px;">${getCategoryIcon(item.category)}</span>`}
+                                    <span class="dash-item-badge ${item.type}">${item.type}</span>
+                                </div>
+                                <div class="dash-item-body">
+                                    <div class="dash-item-title" onclick="viewItem('${item._id}')" style="cursor: pointer;">${escapeHtml(item.title)}</div>
+                                    <div class="dash-item-meta">
+                                        <div class="dash-item-meta-row">📍 ${escapeHtml(item.location)}</div>
+                                        <div class="dash-item-meta-row">Status: <b style="color: ${item.status === 'resolved' ? '#10b981' : item.status === 'active' ? '#6366f1' : '#ef4444'}">${item.status}</b></div>
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:14px;">
+                                        ${item.status === 'active' ? `
+                                            <button onclick="event.stopPropagation(); updateStatus('${item._id}', 'resolved')" style="flex:1;padding:10px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Resolve</button>
+                                        ` : ''}
+                                        <button onclick="event.stopPropagation(); deleteItem('${item._id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#ef4444,#dc2626);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit;">🗑️ Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('itemsContainer').innerHTML = `
+                    <div style="text-align: center; padding: 60px; background: white; border-radius: 20px;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin-bottom: 8px;">Failed to load</h3>
+                        <p style="color: #64748b;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                await apiRequest(`/items/${id}`, 'PUT', { status });
+                showToast('Item marked as resolved! ✅', 'success');
+                loadMyItems();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Delete this item?')) return;
+            try {
+                await apiRequest(`/items/${id}`, 'DELETE');
+                showToast('Item deleted!', 'success');
+                loadMyItems();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        function viewItem(id) { window.location.href = `item-details.html?id=${id}`; }
+
+        loadMyItems();
+    </script>
+</body>
+</html>

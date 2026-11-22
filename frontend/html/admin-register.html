@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Admin Register</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #1e293b 0%, #4f46e5 100%); min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: white; padding: 45px 40px; border-radius: 24px; box-shadow: 0 25px 70px rgba(0,0,0,0.3); width: 100%; max-width: 440px;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 24px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px; box-shadow: 0 20px 40px rgba(239, 68, 68, 0.4);">👑</div>
+                <div style="display: inline-block; padding: 8px 20px; background: #ef4444; color: white; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 1px; margin-bottom: 20px;">ADMIN ACCESS ONLY</div>
+                <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">Create Admin Account</h1>
+                <p style="color: #64748b; font-size: 14px;">Hidden admin registration page</p>
+            </div>
+
+            <form id="adminRegisterForm">
+                <div class="form-field">
+                    <input type="text" id="name" placeholder=" " required>
+                    <label>Full Name</label>
+                </div>
+                <div class="form-field">
+                    <input type="email" id="email" placeholder=" " required>
+                    <label>Email Address</label>
+                </div>
+                <div class="form-field">
+                    <input type="password" id="password" placeholder=" " required minlength="6">
+                    <label>Password</label>
+                </div>
+                <div class="form-field">
+                    <input type="text" id="rollNumber" placeholder=" " required>
+                    <label>Admin ID</label>
+                </div>
+                <div class="form-field">
+                    <input type="tel" id="phone" placeholder=" " required pattern="[0-9]{10}">
+                    <label>Phone (10 digits)</label>
+                </div>
+                <div class="form-field">
+                    <input type="text" id="branch" placeholder=" " required>
+                    <label>Department</label>
+                </div>
+                <div class="form-field" style="border: 2px solid #ef4444; border-radius: 14px; padding: 0;">
+                    <input type="password" id="adminCode" placeholder=" " required style="border: none; background: #fef2f2;">
+                    <label style="color: #ef4444;">🔐 Admin Secret Code *</label>
+                </div>
+                <button type="submit" class="btn btn-primary" id="registerBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 8px 32px rgba(239, 68, 68, 0.35); margin-top: 12px;">
+                    👑 Create Admin Account
+                </button>
+            </form>
+
+            <p class="auth-footer" style="margin-top: 24px;">
+                Normal user? <a href="register.html">Student Registration</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        document.getElementById('adminRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating admin...';
+
+            try {
+                const data = await apiRequest('/auth/register', 'POST', {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    rollNumber: document.getElementById('rollNumber').value,
+                    phone: document.getElementById('phone').value,
+                    branch: document.getElementById('branch').value,
+                    adminCode: document.getElementById('adminCode').value
+                });
+                showToast('👑 Admin account created! Verify OTP.', 'success');
+                localStorage.setItem('pendingVerifyEmail', data.email);
+                setTimeout(() => {
+                    window.location.href = 'register.html?verify=' + encodeURIComponent(data.email);
+                }, 1500);
+            } catch (error) {
+                showToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '👑 Create Admin Account';
+            }
+        });
+    </script>
+</body>
+</html>

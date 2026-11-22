@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Messages</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .conv-card { background: white; border-radius: 16px; padding: 18px 22px; margin-bottom: 12px; display: flex; gap: 16px; align-items: center; cursor: pointer; transition: all 0.25s; border: 1px solid #f1f5f9; }
+        .conv-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+        .conv-avatar { width: 52px; height: 52px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 20px; flex-shrink: 0; }
+        .conv-info { flex: 1; min-width: 0; }
+        .conv-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        .conv-item { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .conv-time { font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .conv-status { padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; background: #d1fae5; color: #047857; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title">💬 Messages</h2>
+            </div>
+
+            <div id="conversationsContainer">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading conversations...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'messages') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        function timeAgo(date) {
+            const s = Math.floor((Date.now() - new Date(date)) / 1000);
+            if (s < 60) return 'just now';
+            if (s < 3600) return Math.floor(s / 60) + 'm';
+            if (s < 86400) return Math.floor(s / 3600) + 'h';
+            if (s < 604800) return Math.floor(s / 86400) + 'd';
+            return new Date(date).toLocaleDateString();
+        }
+
+        async function loadConversations() {
+            const container = document.getElementById('conversationsContainer');
+
+            try {
+                const [received, myClaims] = await Promise.all([
+                    apiRequest('/claims/received').catch(() => ({ claims: [] })),
+                    apiRequest('/claims/my').catch(() => ({ claims: [] }))
+                ]);
+
+                const conversations = [];
+
+                received.claims.filter(c => c.status === 'accepted' && c.claimantId).forEach(c => {
+                    conversations.push({
+                        otherId: c.claimantId._id,
+                        otherName: c.claimantId.name,
+                        itemTitle: c.itemId?.title || 'Item',
+                        lastUpdate: c.respondedAt || c.updatedAt || c.createdAt
+                    });
+                });
+
+                myClaims.claims.filter(c => c.status === 'accepted' && c.ownerId).forEach(c => {
+                    conversations.push({
+                        otherId: c.ownerId._id,
+                        otherName: c.ownerId.name,
+                        itemTitle: c.itemId?.title || 'Item',
+                        lastUpdate: c.respondedAt || c.updatedAt || c.createdAt
+                    });
+                });
+
+                const uniqueConvs = [];
+                const seen = new Set();
+                conversations.forEach(c => {
+                    if (!seen.has(c.otherId)) {
+                        seen.add(c.otherId);
+                        uniqueConvs.push(c);
+                    }
+                });
+
+                uniqueConvs.sort((a, b) => new Date(b.lastUpdate) - new Date(a.lastUpdate));
+
+                if (uniqueConvs.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px; background: white; border-radius: 20px; border: 2px dashed #e2e8f0;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">💬</div>
+                            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px;">No conversations yet</h3>
+                            <p style="color: #64748b;">Chats will appear here once a claim is accepted.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = uniqueConvs.map(c => `
+                    <div class="conv-card" onclick="openChat('${c.otherId}', '${escapeHtml(c.otherName)}')">
+                        <div class="conv-avatar">${c.otherName.charAt(0).toUpperCase()}</div>
+                        <div class="conv-info">
+                            <div class="conv-name">${escapeHtml(c.otherName)}</div>
+                            <div class="conv-item">📦 ${escapeHtml(c.itemTitle)}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="conv-time">${timeAgo(c.lastUpdate)}</div>
+                            <div class="conv-status">● Active</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px; background: white; border-radius: 20px;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin-bottom: 8px;">Failed to load</h3>
+                        <p style="color: #64748b;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function openChat(otherId, otherName) {
+            const roomId = [user.id, otherId].sort().join('_');
+            window.location.href = `chat.html?room=${roomId}&name=${encodeURIComponent(otherName)}&other=${otherId}`;
+        }
+
+        loadConversations();
+    </script>
+</body>
+</html>

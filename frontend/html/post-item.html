@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Report Item</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .post-form-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); max-width: 800px; margin: 0 auto; }
+        .post-header { text-align: center; margin-bottom: 40px; }
+        .post-icon { display: inline-block; width: 80px; height: 80px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 24px; line-height: 80px; font-size: 40px; margin-bottom: 20px; box-shadow: 0 20px 48px rgba(99, 102, 241, 0.3); }
+        .post-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: #1e293b; margin-bottom: 8px; letter-spacing: -1px; }
+        .post-subtitle { color: #64748b; font-size: 15px; }
+        .section-label { display: block; font-weight: 700; color: #1e293b; margin-bottom: 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        .type-option { padding: 24px 20px; border: 2px solid #e2e8f0; border-radius: 18px; cursor: pointer; transition: all 0.3s; text-align: center; background: #f8fafc; }
+        .type-option:hover { border-color: #818cf8; transform: translateY(-3px); }
+        .type-option.selected.lost { border-color: #ef4444; background: linear-gradient(135deg, #fef2f2, #fee2e2); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2); }
+        .type-option.selected.found { border-color: #10b981; background: linear-gradient(135deg, #f0fdf4, #dcfce7); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2); }
+        .type-option-icon { font-size: 42px; margin-bottom: 10px; }
+        .type-option-label { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: #1e293b; }
+        .type-option-desc { font-size: 12px; color: #64748b; margin-top: 6px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; color: #334155; margin-bottom: 8px; font-size: 13px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 15px; background: #f8fafc; transition: all 0.25s; outline: none; font-family: inherit; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .upload-zone { border: 2px dashed #cbd5e0; border-radius: 18px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; background: #f8fafc; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        .upload-zone:hover { border-color: #6366f1; background: linear-gradient(135deg, #f0f4ff, #faf5ff); }
+        .upload-zone.dragover { border-color: #6366f1; background: #e0e7ff; transform: scale(1.02); }
+        .upload-icon { font-size: 56px; margin-bottom: 12px; display: block; }
+        .remove-img-btn { position: absolute; top: 16px; right: 16px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .btn-submit { width: 100%; padding: 18px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35); font-family: inherit; margin-top: 24px; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="post-form-card">
+                <div class="post-header">
+                    <div class="post-icon">📦</div>
+                    <h1 class="post-title">Report an Item</h1>
+                    <p class="post-subtitle">Help someone find their lost item or report what you found</p>
+                </div>
+
+                <form id="itemForm">
+                    <label class="section-label">I want to report...</label>
+                    <div class="type-selector">
+                        <div class="type-option lost" data-type="lost" onclick="selectType('lost')">
+                            <div class="type-option-icon">🔴</div>
+                            <div class="type-option-label">I Lost Something</div>
+                            <div class="type-option-desc">Report a lost item</div>
+                        </div>
+                        <div class="type-option found" data-type="found" onclick="selectType('found')">
+                            <div class="type-option-icon">🟢</div>
+                            <div class="type-option-label">I Found Something</div>
+                            <div class="type-option-desc">Report a found item</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Item Title *</label>
+                        <input type="text" id="title" placeholder="e.g. Black Leather Wallet" required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="category" required>
+                            <option value="">Select category</option>
+                            <option value="Electronics">📱 Electronics</option>
+                            <option value="Wallet">👛 Wallet</option>
+                            <option value="ID Card">🪪 ID Card</option>
+                            <option value="Books">📚 Books</option>
+                            <option value="Clothing">👕 Clothing</option>
+                            <option value="Accessories">🕶️ Accessories</option>
+                            <option value="Other">📦 Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="description" placeholder="Describe color, brand, unique marks..." required maxlength="500"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location (Campus Area) *</label>
+                        <input type="text" id="location" placeholder="e.g. Library, Canteen, Block A" required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="section-label">📸 Upload Photo (Optional)</label>
+                        <div id="dropZone" class="upload-zone">
+                            <input type="file" id="imageFile" accept="image/*" style="display:none;">
+                            <div id="uploadPrompt">
+                                <span class="upload-icon">📷</span>
+                                <h4 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; margin-bottom: 6px;">Click to upload or drag & drop</h4>
+                                <p style="font-size: 13px; color: #64748b;">JPG, PNG, WEBP (max 2MB)</p>
+                            </div>
+                            <div id="imagePreview" style="display:none; position: relative; width: 100%;">
+                                <img id="previewImg" style="max-width: 100%; max-height: 400px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                                <button type="button" onclick="removeImage()" class="remove-img-btn">✕ Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">🚀 Post Item</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'post-item') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        let selectedType = '';
+        let imageBase64 = '';
+
+        const urlType = new URLSearchParams(window.location.search).get('type');
+        if (urlType) selectType(urlType);
+
+        function selectType(type) {
+            selectedType = type;
+            document.querySelectorAll('.type-option').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.type-option.${type}`).classList.add('selected');
+        }
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('imageFile');
+
+        dropZone.addEventListener('click', (e) => {
+            if (!e.target.closest('.remove-img-btn')) fileInput.click();
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith('image/')) return showToast('Select an image file', 'error');
+            if (file.size > 2 * 1024 * 1024) return showToast('Image too large (max 2MB)', 'error');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageBase64 = e.target.result;
+                document.getElementById('previewImg').src = imageBase64;
+                document.getElementById('uploadPrompt').style.display = 'none';
+                document.getElementById('imagePreview').style.display = 'block';
+                showToast('Image uploaded! ✨', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            imageBase64 = '';
+            fileInput.value = '';
+            document.getElementById('uploadPrompt').style.display = 'block';
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+
+        document.getElementById('itemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedType) return showToast('Please select Lost or Found', 'error');
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = '🚀 Posting...';
+
+            try {
+                const data = await apiRequest('/items', 'POST', {
+                    title: document.getElementById('title').value,
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value,
+                    type: selectedType,
+                    location: document.getElementById('location').value,
+                    imageUrl: imageBase64
+                });
+                showToast(data.matches?.length > 0 ? `🎯 AI Found ${data.matches.length} Match(es)!` : '✨ Item posted!', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1500);
+            } catch (error) {
+                showToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '🚀 Post Item';
+            }
+        });
+    </script>
+</body>
+</html>

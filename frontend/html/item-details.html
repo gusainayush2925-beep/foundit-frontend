@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Item Details</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .detail-card { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); margin-bottom: 24px; }
+        .detail-hero { position: relative; height: 380px; background: linear-gradient(135deg, #6366f1, #ec4899); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .detail-hero img { width: 100%; height: 100%; object-fit: contain; background: #000; }
+        .detail-hero-icon { font-size: 140px; opacity: 0.4; }
+        .detail-body { padding: 40px; }
+        .detail-title { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 800; color: #1e293b; margin-bottom: 20px; letter-spacing: -1.5px; line-height: 1.2; }
+        .detail-chips { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+        .detail-chip { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #64748b; }
+        .detail-section-title { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .detail-description { font-size: 16px; color: #1e293b; line-height: 1.7; margin-bottom: 32px; }
+        .owner-card { background: linear-gradient(135deg, #f8fafc, #e0e7ff); padding: 26px; border-radius: 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 32px; }
+        .owner-avatar { width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 24px; }
+        .owner-info { flex: 1; min-width: 200px; }
+        .owner-name { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #1e293b; }
+        .owner-branch { font-size: 13px; color: #64748b; margin-top: 3px; }
+        .owner-phone { background: white; padding: 14px 22px; border-radius: 14px; text-decoration: none; color: #6366f1; font-weight: 700; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .btn-action { width: 100%; padding: 18px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+        .btn-claim { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4); }
+        .btn-found { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4); }
+        .btn-action:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div id="itemContainer">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading item details...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'my-items') link.classList.add('active');
+        });
+        const currentUser = getUser();
+        if (currentUser.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = currentUser.name;
+        document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Administrator' : 'Student';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const itemId = urlParams.get('id');
+
+        function getCategoryIcon(c) {
+            const icons = { 'Electronics':'📱','Wallet':'👛','ID Card':'🪪','Books':'📚','Clothing':'👕','Accessories':'🕶️','Other':'📦' };
+            return icons[c] || '📦';
+        }
+
+        async function loadItem() {
+            try {
+                const data = await apiRequest(`/items/${itemId}`);
+                const item = data.item;
+                const matches = data.matches || [];
+                const isOwner = item.userId._id === currentUser.id;
+
+                document.getElementById('itemContainer').innerHTML = `
+                    <div style="max-width: 900px; margin: 0 auto;">
+                        <a href="dashboard.html" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; background: white; border: 2px solid #e2e8f0; border-radius: 12px; color: #64748b; font-weight: 600; text-decoration: none; margin-bottom: 24px;">← Back to Dashboard</a>
+
+                        <div class="detail-card">
+                            <div class="detail-hero">
+                                ${item.imageUrl ? `<img src="${safeUrl(item.imageUrl)}" alt="">` : `<span class="detail-hero-icon">${getCategoryIcon(item.category)}</span>`}
+                                <span class="dash-item-badge ${item.type}" style="position: absolute; top: 24px; right: 24px; font-size: 13px; padding: 10px 22px;">${item.type === 'lost' ? '🔴 LOST' : '🟢 FOUND'}</span>
+                            </div>
+                            <div class="detail-body">
+                                <h1 class="detail-title">${escapeHtml(item.title)}</h1>
+                                <div class="detail-chips">
+                                    <div class="detail-chip">📁 ${escapeHtml(item.category)}</div>
+                                    <div class="detail-chip">📍 ${escapeHtml(item.location)}</div>
+                                    <div class="detail-chip">📅 ${new Date(item.createdAt).toLocaleDateString()}</div>
+                                    <div class="detail-chip">👁️ ${item.views || 0} views</div>
+                                </div>
+                                <div class="detail-section-title">Description</div>
+                                <p class="detail-description">${escapeHtml(item.description)}</p>
+                                <div class="owner-card">
+                                    <div class="owner-avatar">${(item.userId.name || 'U').charAt(0).toUpperCase()}</div>
+                                    <div class="owner-info">
+                                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Posted by</div>
+                                        <div class="owner-name">${escapeHtml(item.userId.name)}</div>
+                                        ${item.userId.branch ? `<div class="owner-branch">${escapeHtml(item.userId.branch)}</div>` : ''}
+                                    </div>
+                                    ${!isOwner && item.userId.phone ? `<a href="tel:${escapeHtml(item.userId.phone)}" class="owner-phone">📞 ${escapeHtml(item.userId.phone)}</a>` : ''}
+                                </div>
+                                ${isOwner ? `
+                                    <div style="text-align: center; padding: 22px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 18px; color: #92400e; font-weight: 700; font-size: 15px;">✨ This is your item</div>
+                                ` : item.type === 'found' ? `
+                                    <button onclick="showClaimForm()" class="btn-action btn-claim">🔔 Claim This Item (It's Mine!)</button>
+                                ` : `
+                                    <button onclick="showFoundForm()" class="btn-action btn-found">🎉 I Found This Item!</button>
+                                `}
+
+                                <div id="claimForm" style="display:none; margin-top: 24px; padding: 28px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 20px; border: 2px solid #10b981;">
+                                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 20px;">🔔 Claim Request</h3>
+                                    <textarea id="claimMessage" placeholder="Your message..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-family:inherit; min-height:100px; resize:vertical; margin-bottom:14px;"></textarea>
+                                    <textarea id="claimProof" placeholder="Proof (unique details)..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-family:inherit; min-height:80px; resize:vertical; margin-bottom:16px;"></textarea>
+                                    <div style="display:flex; gap:12px;">
+                                        <button onclick="submitClaim()" style="flex:1;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Submit</button>
+                                        <button onclick="hideClaimForm()" style="flex:1;padding:14px;background:#e2e8f0;color:#64748b;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit;">Cancel</button>
+                                    </div>
+                                </div>
+
+                                <div id="foundForm" style="display:none; margin-top: 24px; padding: 28px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 20px; border: 2px solid #6366f1;">
+                                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 12px;">🎉 You Found This Item!</h3>
+                                    <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Send a message to the owner so they can contact you.</p>
+                                    <textarea id="foundMessage" placeholder="Your message..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-family:inherit; min-height:100px; resize:vertical; margin-bottom:16px;"></textarea>
+                                    <div style="display:flex; gap:12px;">
+                                        <button onclick="submitFound()" style="flex:1;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Send</button>
+                                        <button onclick="hideFoundForm()" style="flex:1;padding:14px;background:#e2e8f0;color:#64748b;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit;">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${matches.length > 0 ? `
+                            <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 20px; padding: 26px;">
+                                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #92400e; margin-bottom: 20px;">🎯 AI Found ${matches.length} Possible Match${matches.length > 1 ? 'es' : ''}!</h3>
+                                ${matches.map(m => `
+                                    <div onclick="window.location.href='item-details.html?id=${m.item._id}'" style="cursor:pointer; background: white; padding: 18px; border-radius: 14px; margin-bottom: 10px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
+                                        <div><h4 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">${escapeHtml(m.item.title)}</h4><p style="font-size: 13px; color: #64748b;">📍 ${escapeHtml(m.item.location)}</p></div>
+                                        <div style="background: linear-gradient(135deg, #43e97b, #38f9d7); color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: 800;">${m.score}%</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('itemContainer').innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-icon">❌</span>
+                        <h3>Item not found</h3>
+                        <p>${escapeHtml(error.message)}</p>
+                        <a href="dashboard.html" style="display: inline-block; margin-top: 24px; padding: 14px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 14px; font-weight: 700;">← Back</a>
+                    </div>
+                `;
+            }
+        }
+
+        function showClaimForm() { document.getElementById('claimForm').style.display = 'block'; document.getElementById('claimForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        function hideClaimForm() { document.getElementById('claimForm').style.display = 'none'; }
+        function showFoundForm() { document.getElementById('foundForm').style.display = 'block'; document.getElementById('foundForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        function hideFoundForm() { document.getElementById('foundForm').style.display = 'none'; }
+
+        async function submitClaim() {
+            const message = document.getElementById('claimMessage').value;
+            if (!message) return showToast('Please write a message', 'error');
+            try {
+                await apiRequest('/claims', 'POST', { itemId, message, proofDescription: document.getElementById('claimProof').value });
+                showToast('🔔 Claim submitted!', 'success');
+                setTimeout(() => window.location.href = 'claims.html', 1200);
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        async function submitFound() {
+            const message = document.getElementById('foundMessage').value;
+            if (!message) return showToast('Please write a message', 'error');
+            try {
+                await apiRequest('/claims', 'POST', { itemId, message: `[FOUND] ${message}`, proofDescription: 'Not specified' });
+                showToast('🎉 Message sent!', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1200);
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        loadItem();
+    </script>
+</body>
+</html>

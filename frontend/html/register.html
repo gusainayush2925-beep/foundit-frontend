@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Register</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-split">
+        <div class="auth-showcase">
+            <div class="blob-3"></div>
+            <div class="blob-4"></div>
+            <div class="showcase-content">
+                <div class="showcase-logo">🎒</div>
+                <h1 class="showcase-title">
+                    Join The
+                    <span>FoundIt Family.</span>
+                </h1>
+                <p class="showcase-subtitle">
+                    Report lost items, claim your found belongings, and help fellow students — all in one place.
+                </p>
+                <div class="showcase-features">
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">📸</div>
+                        <div class="showcase-feature-text">Upload Photos Instantly</div>
+                    </div>
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">🔔</div>
+                        <div class="showcase-feature-text">Get Notified on Matches</div>
+                    </div>
+                    <div class="showcase-feature">
+                        <div class="showcase-feature-icon">💬</div>
+                        <div class="showcase-feature-text">Chat With Owner Directly</div>
+                    </div>
+                </div>
+                <div class="showcase-stats">
+                    <div class="showcase-stat"><h3>2 Min</h3><p>Setup Time</p></div>
+                    <div class="showcase-stat"><h3>Free</h3><p>Forever Plan</p></div>
+                    <div class="showcase-stat"><h3>Secure</h3><p>OTP Verified</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-form-side">
+            <div class="auth-form-box">
+                <div id="registerStep">
+                    <div class="mobile-logo">🎒</div>
+                    <h1>Create Account 🚀</h1>
+                    <p class="form-subtitle">Join thousands of students finding lost items</p>
+
+                    <form id="registerForm">
+                        <div class="form-field">
+                            <input type="text" id="name" placeholder=" " required>
+                            <label>Full Name</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="email" id="email" placeholder=" " required>
+                            <label>Email Address</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="password" id="password" placeholder=" " required minlength="6">
+                            <label>Password (min 6 chars)</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="text" id="rollNumber" placeholder=" " required>
+                            <label>Roll Number</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="tel" id="phone" placeholder=" " required pattern="[0-9]{10}">
+                            <label>Phone (10 digits)</label>
+                        </div>
+                        <div class="form-field">
+                            <input type="text" id="branch" placeholder=" " required>
+                            <label>Branch (e.g. BSc.IT)</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="registerBtn">Create My Account 🚀</button>
+                    </form>
+
+                    <p class="auth-footer">
+                        Already have an account? <a href="index.html">Sign in</a>
+                    </p>
+                </div>
+
+                <div id="otpStep" style="display:none; text-align:center;">
+                    <div class="otp-icon-wrap">📧</div>
+                    <h1 style="font-size:28px;">Check Your Email</h1>
+                    <p class="form-subtitle">
+                        We sent a 6-digit OTP to<br>
+                        <b id="otpEmail" style="color:var(--primary);"></b>
+                    </p>
+
+                    <form id="otpForm">
+                        <div class="form-field">
+                            <input type="text" id="otpInput" class="otp-input" placeholder="000000" maxlength="6" required pattern="[0-9]{6}" autocomplete="off" inputmode="numeric">
+                        </div>
+                        <button type="submit" class="btn btn-success" id="verifyBtn">✅ Verify Email</button>
+                    </form>
+
+                    <p class="auth-footer" style="margin-top:20px;">
+                        Didn't receive? <a href="#" id="resendLink">Resend OTP</a>
+                    </p>
+                    <p class="auth-footer" style="margin-top:8px;">
+                        <a href="register.html" style="color:#64748b;">← Back to register</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const verifyEmail = urlParams.get('verify') || localStorage.getItem('pendingVerifyEmail');
+
+        if (verifyEmail) {
+            document.getElementById('registerStep').style.display = 'none';
+            document.getElementById('otpStep').style.display = 'block';
+            document.getElementById('otpEmail').textContent = verifyEmail;
+            localStorage.removeItem('pendingVerifyEmail');
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+
+            try {
+                const data = await apiRequest('/auth/register', 'POST', {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    rollNumber: document.getElementById('rollNumber').value,
+                    phone: document.getElementById('phone').value,
+                    branch: document.getElementById('branch').value
+                });
+                showToast('📧 OTP sent! Check your email', 'success');
+                document.getElementById('otpEmail').textContent = data.email;
+                document.getElementById('registerStep').style.display = 'none';
+                document.getElementById('otpStep').style.display = 'block';
+            } catch (error) {
+                showToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Create My Account 🚀';
+            }
+        });
+
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('verifyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+
+            try {
+                const data = await apiRequest('/auth/verify-otp', 'POST', {
+                    email: document.getElementById('otpEmail').textContent,
+                    otp: document.getElementById('otpInput').value
+                });
+                saveAuth(data.token, data.user);
+                showToast('🎉 Verified! Welcome!', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1200);
+            } catch (error) {
+                showToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = '✅ Verify Email';
+            }
+        });
+
+        document.getElementById('resendLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await apiRequest('/auth/resend-otp', 'POST', {
+                    email: document.getElementById('otpEmail').textContent
+                });
+                showToast('📧 New OTP sent!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

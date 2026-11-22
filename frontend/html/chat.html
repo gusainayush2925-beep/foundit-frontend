@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Chat</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .chat-container { background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: calc(100vh - 100px); max-height: 700px; }
+        .chat-header { padding: 20px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .chat-header-avatar { width: 48px; height: 48px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
+        .chat-header-name { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+        .chat-header-status { font-size: 12px; opacity: 0.85; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 24px; background: #f8fafc; display: flex; flex-direction: column; gap: 12px; }
+        .chat-input-area { padding: 20px 24px; background: white; border-top: 2px solid #f1f5f9; display: flex; gap: 12px; flex-shrink: 0; }
+        .chat-input-area input { flex: 1; padding: 16px 20px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 15px; outline: none; font-family: inherit; transition: all 0.25s; }
+        .chat-input-area input:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .chat-send-btn { padding: 16px 28px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-header-avatar" id="chatAvatar">U</div>
+                    <div>
+                        <div class="chat-header-name" id="chatName">No conversation selected</div>
+                        <div class="chat-header-status" id="chatStatus">Select a claim to start chatting</div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="messagesContainer">
+                    <div style="margin: auto; text-align: center; color: #64748b;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">💬</div>
+                        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">No chat selected</h3>
+                        <p style="font-size: 14px;">Go to <a href="messages.html" style="color: #6366f1; font-weight: 700;">Messages</a> to start chatting</p>
+                    </div>
+                </div>
+                <div class="chat-input-area" id="inputArea" style="display: none;">
+                    <input type="text" id="messageInput" placeholder="Type your message..." maxlength="1000">
+                    <button class="chat-send-btn" onclick="sendMessage()">Send →</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'messages') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        const otherName = urlParams.get('name');
+        let socket = null;
+
+        function initChat() {
+            if (!roomId) return;
+            document.getElementById('chatName').textContent = otherName || 'User';
+            document.getElementById('chatAvatar').textContent = (otherName || 'U').charAt(0).toUpperCase();
+            document.getElementById('chatStatus').textContent = '● Online';
+            document.getElementById('inputArea').style.display = 'flex';
+            document.getElementById('messagesContainer').innerHTML = '<div style="text-align:center;color:#64748b;padding:20px;">Loading messages...</div>';
+
+// NEW — uses SOCKET_URL from api.js
+            socket = io(SOCKET_URL, { auth: { token: getToken() } });   
+            socket.on('connect', () => socket.emit('join_room', roomId));
+            socket.on('connect_error', (err) => showToast('Chat failed: ' + err.message, 'error'));
+            socket.on('receive_message', (msg) => appendMessage(msg));
+            socket.on('error', (err) => showToast(err.message, 'error'));
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            try {
+                const data = await apiRequest(`/chat/${roomId}`);
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                if (data.messages.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:#64748b;padding:40px;">No messages yet. Say hi! 👋</div>';
+                    return;
+                }
+                data.messages.forEach(msg => appendMessage(msg, false));
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                document.getElementById('messagesContainer').innerHTML = `<div style="text-align:center;color:#ef4444;padding:20px;">${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function appendMessage(msg, scroll = true) {
+            const container = document.getElementById('messagesContainer');
+            const isEmpty = container.querySelector('div[style*="text-align:center"]');
+            if (isEmpty) container.innerHTML = '';
+
+            const senderId = msg.senderId && msg.senderId._id ? msg.senderId._id : msg.senderId;
+            const isMine = senderId === user.id;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.style.cssText = `display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'};`;
+            const bubble = document.createElement('div');
+            bubble.style.cssText = `max-width: 70%; padding: 12px 18px; border-radius: ${isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px'}; background: ${isMine ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'white'}; color: ${isMine ? 'white' : '#1e293b'}; box-shadow: 0 4px 12px rgba(0,0,0,0.08); font-size: 15px; line-height: 1.5; word-wrap: break-word;`;
+            const text = document.createElement('div');
+            text.textContent = msg.message;
+            bubble.appendChild(text);
+            const time = document.createElement('div');
+            time.style.cssText = `font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: ${isMine ? 'right' : 'left'};`;
+            time.textContent = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            bubble.appendChild(time);
+            msgDiv.appendChild(bubble);
+            container.appendChild(msgDiv);
+            if (scroll) container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+            if (!socket || !socket.connected) return showToast('Not connected', 'error');
+            const userIds = roomId.split('_');
+            const receiverId = userIds.find(id => id !== user.id);
+            socket.emit('send_message', { roomId, receiverId, message });
+            input.value = '';
+        }
+
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        initChat();
+    </script>
+</body>
+</html>

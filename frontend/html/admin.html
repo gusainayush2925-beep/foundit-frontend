@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Admin Panel</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-table { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .admin-table table { width: 100%; border-collapse: collapse; }
+        .admin-table thead { background: #f8fafc; }
+        .admin-table th { text-align: left; padding: 18px 24px; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        .admin-table td { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .admin-table tr:hover { background: #f8fafc; }
+        .btn-delete-sm { padding: 8px 16px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+        .status-badge.verified { background: #d1fae5; color: #047857; }
+        .status-badge.unverified { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: block;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">Admin</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title">👑 Admin Dashboard</h2>
+            </div>
+
+            <div class="dash-stats" id="adminStats"></div>
+
+            <div class="dash-filters">
+                <button class="dash-filter-chip active" onclick="showTab('users', this)">👥 Users</button>
+                <button class="dash-filter-chip" onclick="showTab('items', this)">📦 All Items</button>
+            </div>
+
+            <div id="adminContainer">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        const user = getUser();
+        if (user.role !== 'admin') {
+            showToast('Admin access only!', 'error');
+            setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        }
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'admin') link.classList.add('active');
+        });
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+
+        let currentTab = 'users';
+
+        async function loadStats() {
+            try {
+                const data = await apiRequest('/admin/stats');
+                const s = data.stats;
+
+                document.getElementById('adminStats').innerHTML = `
+                    <div class="dash-stat-card"><div class="dash-stat-icon blue">👥</div><div><div class="dash-stat-value">${s.totalUsers}</div><div class="dash-stat-label">Users</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon purple">📦</div><div><div class="dash-stat-value">${s.totalItems}</div><div class="dash-stat-label">Items</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon red">🔴</div><div><div class="dash-stat-value">${s.totalLost}</div><div class="dash-stat-label">Lost</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon green">🟢</div><div><div class="dash-stat-value">${s.totalFound}</div><div class="dash-stat-label">Found</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon purple">✅</div><div><div class="dash-stat-value">${s.resolved}</div><div class="dash-stat-label">Resolved</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon red">⏳</div><div><div class="dash-stat-value">${s.pendingClaims}</div><div class="dash-stat-label">Pending</div></div></div>
+                `;
+            } catch (error) { console.error(error); }
+        }
+
+        async function loadUsers() {
+            const container = document.getElementById('adminContainer');
+            container.innerHTML = '<div class="loading-container"><div class="spinner"></div></div>';
+
+            try {
+                const data = await apiRequest('/admin/users');
+                const users = data.users;
+
+                container.innerHTML = `
+                    <div class="admin-table">
+                        <table>
+                            <thead><tr><th>Name</th><th>Email</th><th>Roll</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                ${users.map(u => `
+                                    <tr>
+                                        <td style="font-weight: 600;">${escapeHtml(u.name)}</td>
+                                        <td style="color: #64748b;">${escapeHtml(u.email)}</td>
+                                        <td style="font-family: monospace;">${escapeHtml(u.rollNumber)}</td>
+                                        <td><span class="status-badge ${u.isVerified ? 'verified' : 'unverified'}">${u.isVerified ? '✓ VERIFIED' : '✗ UNVERIFIED'}</span></td>
+                                        <td><button class="btn-delete-sm" onclick="deleteUser('${u._id}', '${escapeHtml(u.name)}')">🗑️ Delete</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div style="text-align:center;padding:60px;background:white;border-radius:20px;"><div style="font-size:64px;margin-bottom:16px;">❌</div><p style="color:#64748b;">${escapeHtml(error.message)}</p></div>`;
+            }
+        }
+
+        async function loadItems() {
+            const container = document.getElementById('adminContainer');
+            container.innerHTML = '<div class="loading-container"><div class="spinner"></div></div>';
+
+            try {
+                const data = await apiRequest('/admin/items');
+                const items = data.items;
+
+                container.innerHTML = `
+                    <div class="admin-table">
+                        <table>
+                            <thead><tr><th>Title</th><th>Type</th><th>Posted By</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                ${items.map(i => `
+                                    <tr>
+                                        <td style="font-weight: 600;">${escapeHtml(i.title)}</td>
+                                        <td><span class="dash-item-badge ${i.type}" style="position: static; display: inline-block;">${i.type}</span></td>
+                                        <td style="color: #64748b;">${escapeHtml(i.userId?.name || 'Unknown')}</td>
+                                        <td style="font-weight: 600; color: ${i.status === 'resolved' ? '#10b981' : '#6366f1'};">${i.status}</td>
+                                        <td><button class="btn-delete-sm" onclick="deleteItem('${i._id}', '${escapeHtml(i.title)}')">🗑️ Delete</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div style="text-align:center;padding:60px;background:white;border-radius:20px;"><div style="font-size:64px;margin-bottom:16px;">❌</div><p style="color:#64748b;">${escapeHtml(error.message)}</p></div>`;
+            }
+        }
+
+        async function deleteUser(id, name) {
+            if (!confirm(`Delete user "${name}" and all their data?`)) return;
+            try {
+                await apiRequest(`/admin/users/${id}`, 'DELETE');
+                showToast('User deleted!', 'success');
+                loadUsers();
+                loadStats();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        async function deleteItem(id, title) {
+            if (!confirm(`Delete item "${title}"?`)) return;
+            try {
+                await apiRequest(`/items/${id}`, 'DELETE');
+                showToast('Item deleted!', 'success');
+                loadItems();
+                loadStats();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        function showTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.dash-filter-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (tab === 'users') loadUsers();
+            else loadItems();
+        }
+
+        loadStats();
+        loadUsers();
+    </script>
+</body>
+</html>

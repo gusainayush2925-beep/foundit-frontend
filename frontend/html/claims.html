@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Claims</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .claim-card { background: white; border-radius: 20px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
+        .claim-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+        .claim-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+        .claim-meta { font-size: 14px; color: #64748b; }
+        .claim-status { padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 800; color: white; letter-spacing: 0.5px; }
+        .claim-status.pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .claim-status.accepted { background: linear-gradient(135deg, #10b981, #059669); }
+        .claim-status.rejected { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .claim-message-box { background: #f8fafc; padding: 18px; border-radius: 14px; margin-bottom: 16px; }
+        .claim-message-label { color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .claim-actions { display: flex; gap: 12px; margin-top: 16px; }
+        .btn-accept { flex: 1; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35); }
+        .btn-reject { flex: 1; padding: 14px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); }
+        .btn-chat { width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 12px; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title">🔔 Claims</h2>
+            </div>
+
+            <div class="dash-filters">
+                <button class="dash-filter-chip active" onclick="showTab('received', this)">📥 Received</button>
+                <button class="dash-filter-chip" onclick="showTab('my', this)">📤 My Claims</button>
+            </div>
+
+            <div id="claimsContainer">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading claims...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'claims') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        let currentTab = 'received';
+
+        async function loadClaims() {
+            const container = document.getElementById('claimsContainer');
+            container.innerHTML = '<div class="loading-container"><div class="spinner"></div><p class="loading-text">Loading...</p></div>';
+
+            try {
+                const endpoint = currentTab === 'received' ? '/claims/received' : '/claims/my';
+                const data = await apiRequest(endpoint);
+                const claims = data.claims;
+
+                if (claims.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px; background: white; border-radius: 20px; border: 2px dashed #e2e8f0;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px;">No claims yet</h3>
+                            <p style="color: #64748b;">${currentTab === 'received' ? 'When someone claims your items, they will appear here' : 'Claim items from dashboard to see them here'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = claims.map(claim => `
+                    <div class="claim-card">
+                        <div class="claim-header">
+                            <div>
+                                <div class="claim-title">${escapeHtml(claim.itemId?.title || 'Item')}</div>
+                                <div class="claim-meta">
+                                    ${currentTab === 'received' ? `Claimed by: <b>${escapeHtml(claim.claimantId?.name || 'Unknown')}</b>` : `Owner: <b>${escapeHtml(claim.ownerId?.name || 'Unknown')}</b>`}
+                                </div>
+                            </div>
+                            <span class="claim-status ${claim.status}">${claim.status.toUpperCase()}</span>
+                        </div>
+
+                        <div class="claim-message-box">
+                            <div class="claim-message-label">Message</div>
+                            <p style="color: #1e293b; line-height: 1.6;">${escapeHtml(claim.message)}</p>
+                            ${claim.proofDescription ? `
+                                <div class="claim-message-label" style="margin-top: 14px;">Proof</div>
+                                <p style="color: #1e293b; font-size: 14px; line-height: 1.6;">${escapeHtml(claim.proofDescription)}</p>
+                            ` : ''}
+                        </div>
+
+                        ${currentTab === 'received' && claim.status === 'pending' ? `
+                            <div class="claim-actions">
+                                <button onclick="respond('${claim._id}', 'accepted')" class="btn-accept">✅ Accept</button>
+                                <button onclick="respond('${claim._id}', 'rejected')" class="btn-reject">❌ Reject</button>
+                            </div>
+                        ` : ''}
+
+                        ${claim.status === 'accepted' && claim.claimantId && currentTab === 'received' ? `
+                            <button onclick="openChat('${claim.claimantId._id}', '${escapeHtml(claim.claimantId.name)}')" class="btn-chat">
+                                💬 Chat with ${escapeHtml(claim.claimantId.name)}
+                            </button>
+                        ` : ''}
+
+                        ${claim.status === 'accepted' && claim.ownerId && currentTab === 'my' ? `
+                            <button onclick="openChat('${claim.ownerId._id}', '${escapeHtml(claim.ownerId.name)}')" class="btn-chat">
+                                💬 Chat with ${escapeHtml(claim.ownerId.name)}
+                            </button>
+                        ` : ''}
+
+                        ${currentTab === 'received' && claim.claimantId && claim.status === 'pending' ? `
+                            <div style="margin-top: 14px; padding: 14px; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); border-radius: 12px; font-size: 13px; color: #1e293b; font-weight: 600;">
+                                📞 ${escapeHtml(claim.claimantId.phone || 'N/A')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px; background: white; border-radius: 20px;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin-bottom: 8px;">Failed to load</h3>
+                        <p style="color: #64748b;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function respond(claimId, status) {
+            try {
+                await apiRequest(`/claims/${claimId}`, 'PUT', { status });
+                showToast(`Claim ${status}! ✅`, 'success');
+                loadClaims();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        function openChat(otherId, otherName) {
+            const roomId = [user.id, otherId].sort().join('_');
+            window.location.href = `chat.html?room=${roomId}&name=${encodeURIComponent(otherName)}&other=${otherId}`;
+        }
+
+        function showTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.dash-filter-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadClaims();
+        }
+
+        loadClaims();
+    </script>
+</body>
+</html>

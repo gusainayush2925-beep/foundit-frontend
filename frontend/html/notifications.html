@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - Notifications</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .notif-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px; display: flex; gap: 16px; align-items: start; cursor: pointer; transition: all 0.25s; border: 1px solid #f1f5f9; }
+        .notif-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+        .notif-card.unread { border-left: 5px solid #6366f1; }
+        .notif-card.read { background: #f8fafc; border-left: 5px solid #cbd5e0; }
+        .notif-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+        .notif-icon.match { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+        .notif-icon.claim { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
+        .notif-icon.claim_response { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+        .notif-icon.chat { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+        .notif-icon.system { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-title-row { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+        .notif-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #1e293b; }
+        .notif-time { font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; }
+        .notif-message { font-size: 14px; color: #64748b; line-height: 1.6; }
+        .unread-dot { display: inline-block; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div class="dash-section-header">
+                <h2 class="dash-section-title">📬 Notifications</h2>
+                <button onclick="markAllAsRead()" style="padding: 12px 22px; background: white; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 700; cursor: pointer; font-family: inherit; color: #64748b;">✓ Mark All Read</button>
+            </div>
+
+            <div id="notificationsContainer">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading notifications...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'notifications') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        const ICONS = { 'match':'🎯', 'claim':'🔔', 'claim_response':'✅', 'chat':'💬', 'system':'📢' };
+
+        function timeAgo(date) {
+            const s = Math.floor((Date.now() - new Date(date)) / 1000);
+            if (s < 60) return 'just now';
+            if (s < 3600) return Math.floor(s / 60) + 'm ago';
+            if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+            if (s < 604800) return Math.floor(s / 86400) + 'd ago';
+            return new Date(date).toLocaleDateString();
+        }
+
+        async function loadNotifications() {
+            try {
+                const data = await apiRequest('/notifications');
+                const notifications = data.notifications;
+                const container = document.getElementById('notificationsContainer');
+
+                if (notifications.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px; background: white; border-radius: 20px; border: 2px dashed #e2e8f0;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px;">No notifications</h3>
+                            <p style="color: #64748b;">When matches or claims happen, you'll see them here</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = notifications.map(n => `
+                    <div class="notif-card ${n.isRead ? 'read' : 'unread'}" onclick="markRead('${n._id}', ${n.isRead})">
+                        <div class="notif-icon ${n.type}">${ICONS[n.type] || '📢'}</div>
+                        <div class="notif-body">
+                            <div class="notif-title-row">
+                                <div class="notif-title">${escapeHtml(n.title)} ${!n.isRead ? '<span class="unread-dot"></span>' : ''}</div>
+                                <div class="notif-time">${timeAgo(n.createdAt)}</div>
+                            </div>
+                            <p class="notif-message">${escapeHtml(n.message)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('notificationsContainer').innerHTML = `
+                    <div style="text-align: center; padding: 60px; background: white; border-radius: 20px;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                        <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin-bottom: 8px;">Failed to load</h3>
+                        <p style="color: #64748b;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function markRead(id, isRead) {
+            if (isRead) return;
+            try { await apiRequest(`/notifications/${id}/read`, 'PUT'); loadNotifications(); } catch (error) { console.error(error); }
+        }
+
+        async function markAllAsRead() {
+            try {
+                await apiRequest('/notifications/read-all', 'PUT');
+                showToast('All marked as read! ✅', 'success');
+                loadNotifications();
+            } catch (error) { showToast(error.message, 'error'); }
+        }
+
+        loadNotifications();
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoundIt - My Profile</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .profile-hero { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 24px; padding: 50px 40px; text-align: center; color: white; margin-bottom: 28px; position: relative; overflow: hidden; }
+        .profile-avatar { width: 120px; height: 120px; background: rgba(255,255,255,0.2); backdrop-filter: blur(20px); border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 54px; font-weight: 800; margin: 0 auto 20px; position: relative; z-index: 2; box-shadow: 0 20px 48px rgba(0,0,0,0.2); }
+        .profile-name { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 8px; position: relative; z-index: 2; letter-spacing: -1px; }
+        .profile-email { font-size: 15px; opacity: 0.9; margin-bottom: 16px; position: relative; z-index: 2; }
+        .profile-badge { display: inline-block; padding: 8px 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; position: relative; z-index: 2; }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .info-box { background: white; padding: 22px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .info-label { font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .info-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #1e293b; }
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .quick-action { padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 700; text-align: center; transition: all 0.25s; }
+        .quick-action:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .qa-1 { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #1e293b; }
+        .qa-2 { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #1e293b; }
+        .qa-3 { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #1e293b; }
+        .btn-logout { width: 100%; padding: 18px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 12px 32px rgba(239, 68, 68, 0.35); transition: all 0.25s; }
+        .btn-logout:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(239, 68, 68, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="dash-sidebar" id="sidebar">
+            <a href="dashboard.html" class="dash-sidebar-brand">
+                <div class="dash-sidebar-brand-icon">🎒</div>
+                <h1>FoundIt</h1>
+            </a>
+            <nav class="dash-sidebar-nav">
+                <a href="dashboard.html" class="dash-sidebar-link" data-page="dashboard"><span class="dash-sidebar-icon">🏠</span> Home</a>
+                <a href="post-item.html" class="dash-sidebar-link" data-page="post-item"><span class="dash-sidebar-icon">📤</span> Post Item</a>
+                <a href="my-items.html" class="dash-sidebar-link" data-page="my-items"><span class="dash-sidebar-icon">📁</span> My Items</a>
+                <a href="claims.html" class="dash-sidebar-link" data-page="claims"><span class="dash-sidebar-icon">🔔</span> My Claims</a>
+                <a href="messages.html" class="dash-sidebar-link" data-page="messages"><span class="dash-sidebar-icon">💬</span> Messages</a>
+                <a href="notifications.html" class="dash-sidebar-link" data-page="notifications"><span class="dash-sidebar-icon">📬</span> Notifications</a>
+                <a href="profile.html" class="dash-sidebar-link" data-page="profile"><span class="dash-sidebar-icon">👤</span> Profile</a>
+                <div id="adminSection" style="display: none;">
+                    <div class="dash-sidebar-section">Admin</div>
+                    <a href="admin.html" class="dash-sidebar-link" data-page="admin"><span class="dash-sidebar-icon">👑</span> Admin Panel</a>
+                </div>
+            </nav>
+            <div class="dash-sidebar-footer">
+                <div class="dash-sidebar-user" onclick="logout()">
+                    <div class="dash-sidebar-user-avatar" id="userAvatar">A</div>
+                    <div class="dash-sidebar-user-info">
+                        <div class="dash-sidebar-user-name" id="userName">User</div>
+                        <div class="dash-sidebar-user-role" id="userRole">Student</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dash-main">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="profile-hero">
+                    <div class="profile-avatar" id="profileAvatar">A</div>
+                    <div class="profile-name" id="profileName">User</div>
+                    <div class="profile-email" id="profileEmail"></div>
+                    <div class="profile-badge">✅ Verified Student</div>
+                </div>
+
+                <div class="dash-stats" id="profileStats"></div>
+
+                <div class="info-grid">
+                    <div class="info-box"><div class="info-label">Roll Number</div><div class="info-value" id="profileRoll">-</div></div>
+                    <div class="info-box"><div class="info-label">Branch</div><div class="info-value" id="profileBranch">-</div></div>
+                    <div class="info-box"><div class="info-label">Phone</div><div class="info-value" id="profilePhone">-</div></div>
+                    <div class="info-box"><div class="info-label">Role</div><div class="info-value" id="profileRole">-</div></div>
+                </div>
+
+                <button onclick="logout()" class="btn-logout">🚪 Logout from FoundIt</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        document.querySelectorAll('.dash-sidebar-link').forEach(link => {
+            if (link.dataset.page === 'profile') link.classList.add('active');
+        });
+        const user = getUser();
+        if (user.role === 'admin') document.getElementById('adminSection').style.display = 'block';
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        document.getElementById('profileAvatar').textContent = user.name.charAt(0).toUpperCase();
+        document.getElementById('profileName').textContent = user.name;
+        document.getElementById('profileEmail').textContent = user.email;
+        document.getElementById('profileRoll').textContent = user.rollNumber || 'N/A';
+        document.getElementById('profileBranch').textContent = user.branch || 'N/A';
+        document.getElementById('profilePhone').textContent = user.phone || 'N/A';
+        document.getElementById('profileRole').textContent = user.role === 'admin' ? 'Administrator' : 'Student';
+
+        async function loadStats() {
+            try {
+                const [myItems, myClaims, notifs] = await Promise.all([
+                    apiRequest('/items/my').catch(() => ({ count: 0 })),
+                    apiRequest('/claims/my').catch(() => ({ claims: [] })),
+                    apiRequest('/notifications').catch(() => ({ notifications: [] }))
+                ]);
+
+                const itemsCount = myItems.count || (myItems.items ? myItems.items.length : 0);
+                const claimsCount = myClaims.claims ? myClaims.claims.length : 0;
+                const notifCount = notifs.notifications ? notifs.notifications.length : 0;
+
+                document.getElementById('profileStats').innerHTML = `
+                    <div class="dash-stat-card"><div class="dash-stat-icon blue">📦</div><div><div class="dash-stat-value">${itemsCount}</div><div class="dash-stat-label">My Items</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon purple">🔔</div><div><div class="dash-stat-value">${claimsCount}</div><div class="dash-stat-label">My Claims</div></div></div>
+                    <div class="dash-stat-card"><div class="dash-stat-icon green">💬</div><div><div class="dash-stat-value">${notifCount}</div><div class="dash-stat-label">Notifications</div></div></div>
+                `;
+            } catch (error) { console.error(error); }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>
